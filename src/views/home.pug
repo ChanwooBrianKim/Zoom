@@ -2,6 +2,7 @@ doctype html
 html(lang="en")
     head
         meta(charset="UTF-8")
+        meta(http-equiv="X-UA-Compatible", content="IE=edge")
         meta(name="viewport", content="width=device-width, initial-scale=1.0")
         title Noom
         link(rel="stylesheet", href="https://unpkg.com/mvp.css")
@@ -21,6 +22,19 @@ html(lang="en")
                 form#msg
                     input(placeholder="message", required, type="text")
                     button Send
+
+            //- Zoom video
+            div#welcome2
+                form#callForm
+                    input(placeholder="Video room name", required, type="text")
+                    button Let's Go
+            div#call
+                div#myStream
+                    video#myFace(autoplay,playsinline, width="400", height="400")
+                    button#mute Mute
+                    button#camera Turn Camera Off
+                    select#cameras
+                    video#peerFace(autoplay,playsinline, width="400", height="400")
 
         //- install socket.io in the frontend
         script(src="/socket.io/socket.io.js") 
