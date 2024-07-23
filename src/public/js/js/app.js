@@ -11,9 +11,9 @@ room.hidden = true;
 let roomName;
 let myStream;
 let myPeerConnection;
-let muted = false;
-let cameraOff = false;
-let roomName2;
+let muted = false; // For zoom video
+let cameraOff = false; // For zoom video
+let roomName2; // For zoom video
 
 // Function to add a message to the chat
 function addMessage(message) {
@@ -92,26 +92,32 @@ call.hidden = true; // Hide video call section initially
 
 // Function to get list of cameras
 async function getCameras() {
+  // Check if media stream is available
   if (!myStream) {
     console.error('Media stream is not available');
     return;
   }
   
   try {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const cameras = devices.filter(device => device.kind === "videoinput");
-    const currentCamera = myStream.getVideoTracks()[0];
+    // The enumerateDevices() method of the MediaDevices interface requests a list of the currently available media input and output devices
+    const devices = await navigator.mediaDevices.enumerateDevices(); // Get a list of all media devices (audio and video)
+    const cameras = devices.filter(device => device.kind === "videoinput"); // Filter out the video input devices (cameras)
+    const currentCamera = myStream.getVideoTracks()[0]; // Get the currently active video track
     camerasSelect.innerHTML = ''; // Clear existing options
+    // Iterate through the list of cameras
     cameras.forEach(camera => {
-      const option = document.createElement("option");
-      option.value = camera.deviceId;
-      option.innerText = camera.label;
+      const option = document.createElement("option"); // Create option element to home.pug
+      option.value = camera.deviceId; // Set the value to the camera's device ID
+      option.innerText = camera.label; // Set the text to the camera's label
+      // Check if the current camera is the active camera and select it
       if (currentCamera && currentCamera.label === camera.label) {
         option.selected = true;
       }
+      // Append the option to the cameras dropdown
       camerasSelect.appendChild(option);
     });
   } catch (e) {
+    // Log any errors encountered during the process
     console.error('Error getting cameras:', e);
   }
 }
@@ -119,8 +125,8 @@ async function getCameras() {
 // Function to get media stream
 async function getMedia(deviceId) {
   const constraints = {
-    audio: true,
-    video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: "user" }
+    audio: true, // Requests access to the user's microphone.
+    video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: "user" } // Requests access to the user's camera
   };
   try {
     myStream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -135,8 +141,10 @@ async function getMedia(deviceId) {
 
 // Function to handle mute button click
 function handleMuteClick() {
-  if (!myStream) return;
+  // Check if myStream is Available
+  if (!myStream) return; //If myStream is not available, the function exits early to avoid errors.
 
+  // If a track is currently enabled, it will be disabled (muted), and if it is disabled, it will be enabled (unmuted)
   myStream.getAudioTracks().forEach(track => track.enabled = !track.enabled);
   muteBtn.innerText = muted ? "Mute" : "Unmute";
   muted = !muted;
