@@ -146,28 +146,33 @@ function handleMuteClick() {
 
   // If a track is currently enabled, it will be disabled (muted), and if it is disabled, it will be enabled (unmuted)
   myStream.getAudioTracks().forEach(track => track.enabled = !track.enabled);
-  muteBtn.innerText = muted ? "Mute" : "Unmute";
-  muted = !muted;
+  muteBtn.innerText = muted ? "Mute" : "Unmute"; // if muted True -> "Mute"
+  muted = !muted; // Mute if mic on unmute if off
 }
 
 // Function to handle camera button click
 function handleCameraClick() {
-  if (!myStream) return;
+  if (!myStream) return; // Quick quit if no myStream
 
   myStream.getVideoTracks().forEach(track => track.enabled = !track.enabled);
-  cameraBtn.innerText = cameraOff ? "Turn Camera Off" : "Turn Camera On";
-  cameraOff = !cameraOff;
+  cameraBtn.innerText = cameraOff ? "Turn Camera Off" : "Turn Camera On"; // if camera off true -> "Turn Camera Off"
+  cameraOff = !cameraOff; // If cameraOff is currently true, it will be set to false, and vice versa.
 }
 
 // Function to handle camera selection change
 async function handleCameraChange() {
   await getMedia(camerasSelect.value);
+  // checks if myPeerConnection (an RTCPeerConnection object) is defined
   if(myPeerConnection) {
     const videoTrack = myStream.getVideoTracks()[0];
+    /**
+    * myPeerConnection.getSenders() returns an array of RTCRtpSender objects, each representing a media track being sent to the remote peer.
+    * find(sender => sender.track.kind === "video") searches through the array to find the sender that is responsible for sending a video track. 
+    */
     const videoSender = myPeerConnection
       .getSenders()
       .find(sender => sender.track.kind === "video");
-    videoSender.replaceTrack(videoTrack);
+    videoSender.replaceTrack(videoTrack); // replaces the current video track being sent by videoSender with the new videoTrack obtained from the updated media stream.
   }
 }
 
@@ -202,14 +207,17 @@ welcomeForm.addEventListener("submit", handleWelcomeSubmit);
 // WebRTC signaling
 socket.on("welcome", async () => {
   if (!myPeerConnection) {
-    myPeerConnection = new RTCPeerConnection();
+    myPeerConnection = new RTCPeerConnection(); // Get new peer connection
   }
-  const offer = await myPeerConnection.createOffer();
+  // createOffer is an asynchronous method that generates the local description (offer) that contains information about the local end of the connection
+  const offer = await myPeerConnection.createOffer(); // creates an SDP (Session Description Protocol) offer
   await myPeerConnection.setLocalDescription(offer);
   socket.emit("offer", offer, roomName2); // Emit offer to the other peer
 });
 
-socket.on("offer", async (offer) => {
+// Send offer to peers
+socket.on("offer", async (offer) => { // offer parameter is the SDP offer received from the other peer.
+  // Check for existing peer connection
   if (!myPeerConnection) {
     myPeerConnection = new RTCPeerConnection();
   }
@@ -219,12 +227,17 @@ socket.on("offer", async (offer) => {
   socket.emit("answer", answer, roomName2); // Emit answer to the other peer
 });
 
-socket.on("answer", (answer) => {
+socket.on("answer", (answer) => { // Socket event listener for "answer":
   if (myPeerConnection) {
     myPeerConnection.setRemoteDescription(new RTCSessionDescription(answer));
   }
 });
 
+// for Handling ICE candidates
+
+/**
+ * ICE candidates are used to find the best path for data to travel between two peers in a WebRTC connection.
+ */
 socket.on("ice", ice => {
   if (myPeerConnection) {
     myPeerConnection.addIceCandidate(new RTCIceCandidate(ice));
