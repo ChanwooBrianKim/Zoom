@@ -11,11 +11,16 @@
     "@babel/core": "^7.24.9",
     "@babel/node": "^7.14.7",
     "@babel/preset-env": "^7.24.8",
-    "nodemon": "^2.0.12"
+    "nodemon": "^2.0.22"
   },
   "dependencies": {
     "@socket.io/admin-ui": "^0.5.1",
+    "bcrypt": "^5.1.1",
     "express": "^4.17.1",
+    "express-session": "^1.18.0",
+    "mongoose": "^8.5.2",
+    "passport": "^0.7.0",
+    "passport-local": "^1.0.0",
     "pug": "^3.0.2",
     "socket.io": "^4.7.5",
     "ws": "^8.18.0"
