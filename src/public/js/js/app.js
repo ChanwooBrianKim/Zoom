@@ -4,6 +4,7 @@ const socket = io();
 const welcome = document.getElementById("welcome");
 const form = welcome.querySelector("form");
 const room = document.getElementById("room");
+const shareScreenBtn = document.getElementById("shareScreen");
 
 // Hide the room section initially
 room.hidden = true;
@@ -92,32 +93,26 @@ call.hidden = true; // Hide video call section initially
 
 // Function to get list of cameras
 async function getCameras() {
-  // Check if media stream is available
   if (!myStream) {
     console.error('Media stream is not available');
     return;
   }
   
   try {
-    // The enumerateDevices() method of the MediaDevices interface requests a list of the currently available media input and output devices
     const devices = await navigator.mediaDevices.enumerateDevices(); // Get a list of all media devices (audio and video)
     const cameras = devices.filter(device => device.kind === "videoinput"); // Filter out the video input devices (cameras)
     const currentCamera = myStream.getVideoTracks()[0]; // Get the currently active video track
     camerasSelect.innerHTML = ''; // Clear existing options
-    // Iterate through the list of cameras
     cameras.forEach(camera => {
-      const option = document.createElement("option"); // Create option element to home.pug
+      const option = document.createElement("option"); // Create option element
       option.value = camera.deviceId; // Set the value to the camera's device ID
       option.innerText = camera.label; // Set the text to the camera's label
-      // Check if the current camera is the active camera and select it
       if (currentCamera && currentCamera.label === camera.label) {
         option.selected = true;
       }
-      // Append the option to the cameras dropdown
       camerasSelect.appendChild(option);
     });
   } catch (e) {
-    // Log any errors encountered during the process
     console.error('Error getting cameras:', e);
   }
 }
@@ -141,44 +136,59 @@ async function getMedia(deviceId) {
 
 // Function to handle mute button click
 function handleMuteClick() {
-  // Check if myStream is Available
-  if (!myStream) return; //If myStream is not available, the function exits early to avoid errors.
+  if (!myStream) return;
 
-  // If a track is currently enabled, it will be disabled (muted), and if it is disabled, it will be enabled (unmuted)
   myStream.getAudioTracks().forEach(track => track.enabled = !track.enabled);
-  muteBtn.innerText = muted ? "Mute" : "Unmute"; // if muted True -> "Mute"
-  muted = !muted; // Mute if mic on unmute if off
+  muteBtn.innerText = muted ? "Mute" : "Unmute";
+  muted = !muted;
 }
 
 // Function to handle camera button click
 function handleCameraClick() {
-  if (!myStream) return; // Quick quit if no myStream
+  if (!myStream) return;
 
   myStream.getVideoTracks().forEach(track => track.enabled = !track.enabled);
-  cameraBtn.innerText = cameraOff ? "Turn Camera Off" : "Turn Camera On"; // if camera off true -> "Turn Camera Off"
-  cameraOff = !cameraOff; // If cameraOff is currently true, it will be set to false, and vice versa.
+  cameraBtn.innerText = cameraOff ? "Turn Camera Off" : "Turn Camera On";
+  cameraOff = !cameraOff;
 }
 
 // Function to handle camera selection change
 async function handleCameraChange() {
   await getMedia(camerasSelect.value);
-  // checks if myPeerConnection (an RTCPeerConnection object) is defined
   if(myPeerConnection) {
     const videoTrack = myStream.getVideoTracks()[0];
-    /**
-    * myPeerConnection.getSenders() returns an array of RTCRtpSender objects, each representing a media track being sent to the remote peer.
-    * find(sender => sender.track.kind === "video") searches through the array to find the sender that is responsible for sending a video track. 
-    */
-    const videoSender = myPeerConnection
-      .getSenders()
-      .find(sender => sender.track.kind === "video");
-    videoSender.replaceTrack(videoTrack); // replaces the current video track being sent by videoSender with the new videoTrack obtained from the updated media stream.
+    const videoSender = myPeerConnection.getSenders().find(sender => sender.track.kind === "video");
+    videoSender.replaceTrack(videoTrack);
   }
 }
 
 muteBtn.addEventListener("click", handleMuteClick);
 cameraBtn.addEventListener("click", handleCameraClick);
 camerasSelect.addEventListener("input", handleCameraChange);
+
+// Function to handle screen sharing
+async function handleScreenShare() {
+  try {
+    const screenStream = await navigator.mediaDevices.getDisplayMedia({
+      video: true
+    });
+
+    const screenTrack = screenStream.getVideoTracks()[0];
+    const videoSender = myPeerConnection.getSenders().find(sender => sender.track.kind === "video");
+    videoSender.replaceTrack(screenTrack);
+
+    screenTrack.onended = async () => {
+      const cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const cameraTrack = cameraStream.getVideoTracks()[0];
+      videoSender.replaceTrack(cameraTrack);
+    };
+
+  } catch (e) {
+    console.error("Error sharing screen:", e);
+  }
+}
+
+shareScreenBtn.addEventListener("click", handleScreenShare);
 
 // Welcome Form (join a room)
 const welcome2 = document.getElementById("welcome2");
@@ -209,15 +219,13 @@ socket.on("welcome", async () => {
   if (!myPeerConnection) {
     myPeerConnection = new RTCPeerConnection(); // Get new peer connection
   }
-  // createOffer is an asynchronous method that generates the local description (offer) that contains information about the local end of the connection
-  const offer = await myPeerConnection.createOffer(); // creates an SDP (Session Description Protocol) offer
+  const offer = await myPeerConnection.createOffer();
   await myPeerConnection.setLocalDescription(offer);
   socket.emit("offer", offer, roomName2); // Emit offer to the other peer
 });
 
 // Send offer to peers
-socket.on("offer", async (offer) => { // offer parameter is the SDP offer received from the other peer.
-  // Check for existing peer connection
+socket.on("offer", async (offer) => {
   if (!myPeerConnection) {
     myPeerConnection = new RTCPeerConnection();
   }
@@ -227,17 +235,12 @@ socket.on("offer", async (offer) => { // offer parameter is the SDP offer receiv
   socket.emit("answer", answer, roomName2); // Emit answer to the other peer
 });
 
-socket.on("answer", (answer) => { // Socket event listener for "answer":
+socket.on("answer", (answer) => {
   if (myPeerConnection) {
     myPeerConnection.setRemoteDescription(new RTCSessionDescription(answer));
   }
 });
 
-// for Handling ICE candidates
-
-/**
- * ICE candidates are used to find the best path for data to travel between two peers in a WebRTC connection.
- */
 socket.on("ice", ice => {
   if (myPeerConnection) {
     myPeerConnection.addIceCandidate(new RTCIceCandidate(ice));
@@ -257,6 +260,7 @@ function makeConnection() {
       }
     ]
   });
+
   if (!myStream) {
     console.error('Media stream is not available');
     return;
@@ -264,7 +268,6 @@ function makeConnection() {
 
   myPeerConnection.addEventListener("icecandidate", handleIce);
   myPeerConnection.addEventListener("track", handleAddStream);
-  
   myStream.getTracks().forEach(track => myPeerConnection.addTrack(track, myStream));
 }
 
