@@ -6,6 +6,7 @@ Welcome to our Real-Time Chat and Video Conference App! This project lets you jo
 
 - **Chat in Real-Time**: Join rooms and chat with friends instantly.
 - **Video Calls**: Start video calls with anyone in the same room.
+- **Screen Share**: Start sharing your screen while you are on the video call.
 - **User Nicknames**: Identify yourself with a simple nickname.
 - **Dynamic Rooms**: Create and join rooms easily, see how many people are in each room.
 - **Media Control**: Manage your camera and microphone during calls.
@@ -59,6 +60,7 @@ Welcome to our Real-Time Chat and Video Conference App! This project lets you jo
 - **Join a Room**: Enter a room name and hit join.
 - **Send Messages**: Type your message and hit send.
 - **Video Calls**: Allow camera and microphone access, then join a room.
+- **Screen Share**: Click "Screen share" button and choose which screen you want to share with your friend.
 - **Mute/Unmute & Toggle Camera**: Use the buttons to control your audio and video.
 
 ## 📂 Project Structure
