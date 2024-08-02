@@ -10,8 +10,8 @@ const shareScreenBtn = document.getElementById("shareScreen");
 room.hidden = true;
 
 let roomName;
-let myStream;
-let myPeerConnection;
+let myStream; // For zoom video
+let myPeerConnection; // For zoom video
 let muted = false; // For zoom video
 let cameraOff = false; // For zoom video
 let roomName2; // For zoom video
@@ -169,20 +169,27 @@ camerasSelect.addEventListener("input", handleCameraChange);
 // Function to handle screen sharing
 async function handleScreenShare() {
   try {
-    const screenStream = await navigator.mediaDevices.getDisplayMedia({
+    // Requests access to capture the user's screen
+    const screenStream = await navigator.mediaDevices.getDisplayMedia({ // prompts the user to select a screen, window, or tab to share
       video: true
     });
+    // Extracts the video track from the screenStream
+    const screenTrack = screenStream.getVideoTracks()[0]; // screenTrack is the video track that captures the screen
+    // Finds the sender in the peer connection that is responsible for sending the video track.
+    const videoSender = myPeerConnection.getSenders().find(sender => sender.track.kind === "video"); // filters this list to find the sender that is sending a video track
+    videoSender.replaceTrack(screenTrack); // The peer connection now sends the screen capture instead of the camera feed
 
-    const screenTrack = screenStream.getVideoTracks()[0];
-    const videoSender = myPeerConnection.getSenders().find(sender => sender.track.kind === "video");
-    videoSender.replaceTrack(screenTrack);
-
+    // Triggered when the user stops screen sharing
     screenTrack.onended = async () => {
-      const cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
-      const cameraTrack = cameraStream.getVideoTracks()[0];
-      videoSender.replaceTrack(cameraTrack);
+      const cameraStream = await navigator.mediaDevices.getUserMedia({ video: true }); // called again to access the user's camera
+      const cameraTrack = cameraStream.getVideoTracks()[0]; // extracts the video track from the camera stream again
+      videoSender.replaceTrack(cameraTrack); // replaces the screen capture track with the original camera track in the peer connection
     };
-
+  /*
+  User denies screen sharing permission.
+  Issues with accessing media devices.
+  Problems with replacing the track in the peer connection
+  */
   } catch (e) {
     console.error("Error sharing screen:", e);
   }
