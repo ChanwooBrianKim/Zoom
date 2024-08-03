@@ -1,27 +1,48 @@
-// Function to handle screen sharing
-async function handleScreenShare() {
-  try {
-    const screenStream = await navigator.mediaDevices.getDisplayMedia({
-      video: true
+// socketHandlers.js
+export function setupSocketHandlers(socket) {
+  socket.on("welcome", (user, newCount) => {
+    const h3 = document.querySelector("#room h3");
+    h3.innerText = `Room ${roomName} (${newCount})`;
+    addMessage(`${user} arrived!`);
+  });
+
+  socket.on("bye", (left, newCount) => {
+    const h3 = document.querySelector("#room h3");
+    h3.innerText = `Room ${roomName} (${newCount})`;
+    addMessage(`${left} left ㅠㅠ`);
+  });
+
+  socket.on("new_message", addMessage);
+
+  socket.on("room_change", (rooms) => {
+    const roomList = document.querySelector("#welcome ul");
+    roomList.innerHTML = '';
+    rooms.forEach(room => {
+      const li = document.createElement("li");
+      li.innerText = room;
+      roomList.append(li);
     });
+  });
 
-    const screenTrack = screenStream.getVideoTracks()[0];
-    const videoSender = myPeerConnection.getSenders().find(sender => sender.track.kind === "video");
-
-    if (!videoSender) {
-      console.error("Video sender not found. Ensure the peer connection is properly set up and the video track is added.");
-      return;
+  socket.on("offer", async (offer) => {
+    if (!myPeerConnection) {
+      myPeerConnection = new RTCPeerConnection();
     }
+    await myPeerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await myPeerConnection.createAnswer();
+    await myPeerConnection.setLocalDescription(answer);
+    socket.emit("answer", answer, roomName2);
+  });
 
-    videoSender.replaceTrack(screenTrack);
+  socket.on("answer", (answer) => {
+    if (myPeerConnection) {
+      myPeerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+    }
+  });
 
-    screenTrack.onended = async () => {
-      const cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
-      const cameraTrack = cameraStream.getVideoTracks()[0];
-      videoSender.replaceTrack(cameraTrack);
-    };
-
-  } catch (e) {
-    console.error("Error sharing screen:", e);
-  }
+  socket.on("ice", ice => {
+    if (myPeerConnection) {
+      myPeerConnection.addIceCandidate(new RTCIceCandidate(ice));
+    }
+  });
 }
