@@ -123,7 +123,7 @@ export function setupVideo(socket) {
     const welcome2 = document.getElementById("welcome2");
     const welcomeForm = welcome2.querySelector("#callForm");
 
-    // Function to initialise the call
+    // Function to initialie the call
     async function initCall() {
         welcome2.hidden = true;
         call.hidden = false;
