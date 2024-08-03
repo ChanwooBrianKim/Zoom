@@ -39,6 +39,12 @@ html(lang="en")
                     video#peerFace(autoplay,playsinline, width="400", height="400")
                     button#shareScreen Share Screen
 
+            //- File sharing
+            <form id="fileForm">
+            <input type="file" id="fileInput" />
+            <button type="submit">Share File</button>
+            </form>
+
         //- install socket.io in the frontend
         script(src="/socket.io/socket.io.js") 
         script(type="module" src="/public/js/app.js")

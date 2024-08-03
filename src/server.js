@@ -87,3 +87,24 @@ wsServer.on("connection", (socket) => {
 
 const handleListen = () => console.log(`Listening on http://localhost:3000`);
 httpServer.listen(3000, handleListen);
+
+// file sharing using multer
+// const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const appp = express();
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage });
+
+app.post('/upload', upload.single('file'), (req, res) => {
+  res.send({ filePath: '/uploads/${req.file.filename}' });
+});
