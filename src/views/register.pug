@@ -1,0 +1,21 @@
+doctype html
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    title Register
+  body
+    header
+      h1 Register
+    main
+      form#registerForm(method="post" action="/auth/register")
+        div
+          label(for="username") Username:
+          input(type="text" name="username" required)
+        div
+          label(for="password") Password:
+          input(type="password" name="password" required)
+        button(type="submit") Register
+      p
+        a(href="/login") Already have an account? Login here.
+    script(src="/public/js/register.js")
