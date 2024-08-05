@@ -109,28 +109,34 @@
 //   res.send({ filePath: '/uploads/${req.file.filename}' });
 // });
 
-import dotenv from 'dotenv';
+import dotenv from 'dotenv'; // Loads environment variables from a .env file
 dotenv.config();
 
 import http from 'http';
 import express from 'express';
 import { Server } from 'socket.io';
 import { instrument } from '@socket.io/admin-ui';
-import bodyParser from 'body-parser';
+import bodyParser from 'body-parser'; // Middleware to parse incoming request bodies
 import path from 'path';
 
 import './db.js'; // Ensure the database connection is established
 
-import authRoutes from './routes/auth.js';
-import uploadRoutes from './routes/upload.js';
+import authRoutes from './routes/auth.js'; // Routes for user authentication
+import uploadRoutes from './routes/upload.js'; // Routes for file uploads
 import { authenticateSocket } from './middlewares/auth.js';
 import { publicRooms, countRoom, handleSocketConnection } from './socket.js';
 
-const app = express();
-const SECRET_KEY = process.env.SECRET_KEY;
+const app = express(); // Initializes an Express application
+const SECRET_KEY = process.env.SECRET_KEY; // Retrieves the secret key
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json()); // Parses incoming JSON and URL-encoded request bodies
+/*
+extended: true = 
+Parses nested objects, 
+which allows for rich data structures 
+in the URL-encoded data
+*/
+app.use(bodyParser.urlencoded({ extended: true })); // Parses incoming requests with URL-encoded payloads
 
 app.set('view engine', 'pug');
 app.set('views', path.join(path.resolve(), 'src/views')); // Updated to point to src/views
@@ -138,15 +144,16 @@ app.set('views', path.join(path.resolve(), 'src/views')); // Updated to point to
 app.use('/public', express.static(path.join(path.resolve(), 'src/public')));
 app.use('/uploads', express.static(path.join(path.resolve(), 'uploads')));
 
+// Routes
 app.get('/', (_, res) => res.render('home'));
 app.get('/login', (_, res) => res.render('login'));
 app.get('/register', (_, res) => res.render('register'));
 app.get('/*', (_, res) => res.redirect('/'));
 
-app.use('/auth', authRoutes);
-app.use('/upload', authenticateSocket, uploadRoutes);
+app.use('/auth', authRoutes); // Uses authentication routes
+app.use('/upload', authenticateSocket, uploadRoutes); // Uses file upload routes with socket authentication
 
-const httpServer = http.createServer(app);
+const httpServer = http.createServer(app); // Creates an HTTP server using the Express app
 const wsServer = new Server(httpServer, {
   cors: {
     origin: ['https://admin.socket.io'],
@@ -154,12 +161,20 @@ const wsServer = new Server(httpServer, {
   },
 });
 
+/* 
+instrument function sets up the Socket.IO server to be monitored by the admin UI, 
+which is particularly useful for debugging and managing your WebSocket connections
+*/
 instrument(wsServer, {
+  // A configuration option to specify whether authentication is required to access the admin UI
   auth: false,
 });
 
+// Uses socket authentication middleware
 wsServer.use(authenticateSocket);
+// Handles new WebSocket connections
 wsServer.on('connection', (socket) => handleSocketConnection(socket, wsServer));
 
+// Start the server
 const handleListen = () => console.log(`Listening on http://localhost:3000`);
 httpServer.listen(3000, handleListen);
