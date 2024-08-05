@@ -1,5 +1,5 @@
 import express from 'express';
-import multer from 'multer'; // Middleware for handling multipart/form-data for file uploads
+import multer from 'multer';
 import path from 'path';
 
 const router = express.Router();
@@ -22,7 +22,7 @@ router.post('/', upload.single('file'), (req, res) => {
     if (req.file) {
         res.send({ filePath: `/uploads/${req.file.filename}`});
     } else {
-        res.status(500).send({ error: 'File uploadd failed' });
+        res.status(500).send({ error: 'File upload failed' });
     }
 });
 
