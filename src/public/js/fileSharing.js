@@ -4,10 +4,11 @@ export function setupFileSharing(socket) {
 
     fileForm.addEventListener('submit', (event) => {
         event.preventDefault();
-        const file = fileInput.files[0];
-        const formData = new FormData();
-        formData.append('file', file);
-
+        const file = fileInput.files[0]; // retrieves the first file selected by the user
+        const formData = new FormData(); // creates a new FormData object to hold the file data
+        formData.append('file', file); // appends the selected file to the FormData object
+        
+        //  sends an HTTP POST request to the /upload endpoint with the form data.
         fetch('/upload', {
             method: "POST",
             body: formData,
