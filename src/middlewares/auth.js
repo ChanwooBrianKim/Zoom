@@ -2,12 +2,12 @@ import jwt from 'jsonwebtoken';
 const SECRET_KEY = process.env.SECRET_KEY;
 
 export const authenticateToken = (req, res, next) => {
-    const authHEader = req.headers['authorization'];
-    const token = authHEader && authHEader.split(' ')[1];
-    if (token == null) return res.sendSatus(401);
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (token == null) return res.sendStatus(401);
 
     jwt.verify(token, SECRET_KEY, (err, user) => {
-        if (err) return res.sendSatus(403);
+        if (err) return res.sendStatus(403);
         req.user = user;
         next();
     });
