@@ -1,54 +1,29 @@
-import Message from './models/Message.js';
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
 
-export function publicRooms(wsServer) {
-  const {
-    sockets: {
-      adapter: { sids, rooms },
-    },
-  } = wsServer;
-  const publicRooms = [];
-  rooms.forEach((_, key) => {
-    if (sids.get(key) === undefined) {
-      publicRooms.push(key);
-    }
-  });
-  return publicRooms;
-}
+  const username = document.querySelector('input[name="username"]').value;
+  const password = document.querySelector('input[name="password"]').value;
 
-export function countRoom(roomName, wsServer) {
-  return wsServer.sockets.adapter.rooms.get(roomName)?.size;
-}
-
-export function handleSocketConnection(socket, wsServer) {
-  socket['nickname'] = socket.user.username;
-  socket.onAny((event) => {
-    console.log(`Socket Event: ${event}`);
-  });
-  socket.on('enter_room', (roomName, done) => {
-    socket.join(roomName);
-    done();
-    socket.to(roomName).emit('welcome', socket.nickname, countRoom(roomName, wsServer));
-  });
-  socket.on('disconnecting', () => {
-    socket.rooms.forEach((room) =>
-      socket.to(room).emit('bye', socket.nickname, countRoom(room, wsServer) - 1)
-    );
-  });
-  socket.on('disconnect', () => {
-    wsServer.sockets.emit('room_change', publicRooms(wsServer));
-  });
-  socket.on('new_message', async (msg, room, done) => {
-    const message = new Message({
-      room,
-      nickname: socket.nickname,
-      message: msg,
+  try {
+    const response = await fetch('/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password }),
     });
-    await message.save();
-    socket.to(room).emit('new_message', `${socket.nickname}: ${msg}`);
-    done();
-  });
-  socket.on('nickname', (nickname) => (socket['nickname'] = nickname));
-  socket.on('file_shared', (filePath) => {
-    wsServer.emit('file_shared', filePath);
-  });
-}
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to login');
+    }
+
+    const data = await response.json();
+    localStorage.setItem('token', data.token); // Store the token in local storage
+    alert('Login successful');
+    window.location.href = '/'; // Redirect to home page or dashboard
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Error: ' + error.message);
+  }
+});
