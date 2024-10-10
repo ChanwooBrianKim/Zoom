@@ -2,9 +2,7 @@ import { setupChat } from './chat.js';
 import { setupVideo } from './video.js';
 import { setupFileSharing } from './fileSharing.js';
 
-// // Initialise chat and video features
 // const socket = io();
-
 const token = localStorage.getItem('token'); // Retrieve the token from local storage
 
 if (!token) {
